@@ -1,0 +1,112 @@
+load(DONATES20)
+
+summary(DONATE$Donated19)
+head(DONATE)
+
+length(unique(DONATE$ID))
+summary(DONATE$GENDER) #U is a very rare level
+library(regclass)
+mosaic( Donated19 ~ GENDER, data=DONATE, equal=TRUE)
+
+str(DONATE)
+summary(DONATE$MARITAL_STATUS)
+levels(DONATE$MARITAL_STATUS)[c(1,2,4,6,7)] <- "Other"
+mosaic( Donated19 ~ MARITAL_STATUS, data=DONATE)
+
+summary(DONATE$BIRTH_YEAR)
+summary(DONATE$DEGREE_1_GRAD_YEAR)
+hist( DONATE$DEGREE_1_GRAD_YEAR -DONATE$BIRTH_YEAR )
+
+DONATE$BirthGradIssue <- factor( ifelse( DONATE$DEGREE_1_GRAD_YEAR -DONATE$BIRTH_YEAR < 16, "Yes", "No" ) )
+mosaic( Donated19 ~ BirthGradIssue, data=DONATE, equal=TRUE)
+
+summary( DONATE$DEGREE_2_GRAD_YEAR )
+
+second <- c()
+for( i in 1:nrow(DONATE)) { 
+  if( is.na(DONATE$DEGREE_2_GRAD_YEAR[i] ) ) {
+    second[i] <- "None"
+    next }
+  if(DONATE$DEGREE_2_GRAD_YEAR[i] >= 1960 & DONATE$DEGREE_2_GRAD_YEAR[i] <= 1969 ) { 
+    second[i] <- "1960s" }
+  if(DONATE$DEGREE_2_GRAD_YEAR[i] >= 1970 & DONATE$DEGREE_2_GRAD_YEAR[i] <= 1979 ) { 
+    second[i] <- "1970s" }
+  if(DONATE$DEGREE_2_GRAD_YEAR[i] >= 1980 & DONATE$DEGREE_2_GRAD_YEAR[i] <= 1989 ) { 
+    second[i] <- "1980s" }
+  if(DONATE$DEGREE_2_GRAD_YEAR[i] >= 1990 & DONATE$DEGREE_2_GRAD_YEAR[i] <= 1999 ) { 
+    second[i] <- "1990s" }
+  if(DONATE$DEGREE_2_GRAD_YEAR[i] >= 2000 & DONATE$DEGREE_2_GRAD_YEAR[i] <= 2009 ) { 
+    second[i] <- "2000s" }
+  if(DONATE$DEGREE_2_GRAD_YEAR[i] >= 2010 & DONATE$DEGREE_2_GRAD_YEAR[i] <= 2019 ) { 
+    second[i] <- "2010s" }
+  }
+DONATE$DEGREE_2_GRAD_YEAR <- factor(second)
+mosaic( Donated19 ~ DEGREE_2_GRAD_YEAR, data=DONATE,equal=TRUE)
+
+AOV <- aov(Donated19=="Yes" ~ DEGREE_2_GRAD_YEAR, data=DONATE)
+TUKEY <- TukeyHSD(AOV)
+library(multcompView)
+multcompLetters4(AOV,TUKEY)
+
+
+summary( DONATE$DEGREE_3_GRAD_YEAR )
+
+DONATE$DEGREE_3_GRAD_YEAR <- factor( ifelse( is.na(DONATE$DEGREE_3_GRAD_YEAR),"None","Yes" ))
+
+mosaic( Donated19 ~ DEGREE_3_GRAD_YEAR, data=DONATE,equal=TRUE)
+
+summary(DONATE$DEGREE_1_CAMPUS)
+
+levels(DONATE$DEGREE_1_CAMPUS)[ which( levels(DONATE$DEGREE_1_CAMPUS) %in% c("MCK","MEM","UTC","UTM") ) ] <- "NotUTK"
+mosaic( Donated19 ~ DEGREE_1_CAMPUS, data=DONATE,equal=TRUE)
+
+
+summary( DONATE$DEGREE_2_SCHOOL )
+DONATE$DEGREE_2_SCHOOL <- combine_rare_levels(DONATE$DEGREE_2_SCHOOL, threshold = 200)$values 
+mosaic( Donated19 ~ DEGREE_2_SCHOOL, data=DONATE,equal=TRUE)
+
+for( i in grep("TOTAL_CASH", names(DONATE)  ) ) {
+  DONATE[which(is.na(DONATE[,i])),i] <- 0
+}
+
+DONATE$TotalClicks <- apply( DONATE[,grep("EMAILS_CLICKED",names(DONATE))], 1, sum )
+plot(Donated19 ~ TotalClicks, data=DONATE)
+
+#Less than average emails in this year?
+
+summary(DONATE$EMAILS_OPENED_2011)
+
+TotalEmails <- (DONATE$EMAILS_OPENED_2018+DONATE$EMAILS_OPENED_2017+DONATE$EMAILS_OPENED_2016+DONATE$EMAILS_OPENED_2015+DONATE$EMAILS_OPENED_2014+DONATE$EMAILS_OPENED_2013+DONATE$EMAILS_OPENED_2012+DONATE$EMAILS_OPENED_2011)
+mosaic(Donated19~TotalEmails, data = DONATE)
+
+Emails18 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2018 < 15.25, "Yes", "No" ) )
+Emails17 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2017 < 15.13, "Yes", "No" ) )
+Emails16 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2016 < 7.948, "Yes", "No" ) )
+Emails15 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2015 < 9.405, "Yes", "No" ) )
+Emails14 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2014 < 8.531, "Yes", "No" ) )
+Emails13 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2013 < 6.876, "Yes", "No" ) )
+Emails12 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2012 < 5.342, "Yes", "No" ) )
+Emails11 <- DONATE$BirthGradIssue <- factor( ifelse( TotalEmails -DONATE$EMAILS_OPENED_2011 < 1.818, "Yes", "No" ) )
+
+apply( DONATE[,grep("EMAILS_OPENED",names(DONATE))] , 1, sum )
+
+DONATE$TOTALEMAILSOPENED <- apply( DONATE[,grep("EMAILS_OPENED",names(DONATE))] , 1, sum )
+
+mosaic(Donated19~DONATE$TOTALEMAILSOPENED, data = DONATE)
+
+library(regclass)
+
+DONATE$TOTALGAMESATT <- apply(DONATE[,grep("NUM_FB_GAMES",names(DONATE))],1,sum)
+
+FOOTBAWLTIMEINTN <- c()
+for(i in 1:nrow(DONATE)) {
+  if(DONATE$TOTALGAMESATT[i] >= mean(DONATE$TOTALGAMESATT)){
+    FOOTBAWLTIMEINTN[i] <- "above average"
+  }
+  if(DONATE$TOTALGAMESATT[i] <= mean(DONATE$TOTALGAMESATT)){
+    FOOTBAWLTIMEINTN[i] <- "less than average"
+  }
+}
+
+DONATE$MORETHANAVERAGEGAMES <- factor(FOOTBAWLTIMEINTN)
+mosaic(Donated19~MORETHANAVERAGEGAMES, data = DONATE, equal = TRUE)
